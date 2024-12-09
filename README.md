@@ -7,10 +7,10 @@ This family of patches mitigates the problem in a quick-and-dirty way (which is 
 3) patch it so that once every 60 game loop cycles the OS cursor status is checked, and the cursor is hidden if it is visible.
 
 ### Supported games:
-Devastation
-Pariah
-Shadow Ops: Red Mercury
-Tribes: Vengeance
+* Devastation
+* Pariah
+* Shadow Ops: Red Mercury
+* Tribes: Vengeance
 
 When I find this bug in other games I play, I will (hopefully) add support for them too.
 _Note:_ In case of Devastation, Pariah and Tribes: Vengeance, this patch is intended to be a part of larger patches, which will fix more bugs in the corresponding games.
@@ -43,10 +43,10 @@ Games based on more recent idTech engine versions also exhibit this bug, but Alt
 3) он модифицируется таким образом: каждые 60 циклов производится проверка на видимость курсора мыши ОС, и если он является видимым - он прячется.
 
 ### Поддерживаемые игры:
-Devastation
-Pariah
-Shadow Ops: Red Mercury
-Tribes: Vengeance
+* Devastation
+* Pariah
+* Shadow Ops: Red Mercury
+* Tribes: Vengeance
 
 Если я найду этот баг в других играх, в которые буду играть, наверное буду добавлять их поддержку тоже, постепенно.
 _Примечание:_ Для Devastation, Pariah и Tribes: Vengeance этот патч скороее всего будет включён в более крупные патчи, которые будут фиксить и многие другие баги в этих играх.
