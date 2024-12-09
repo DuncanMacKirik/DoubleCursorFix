@@ -28,7 +28,7 @@ All in all, it has been a good practice in system programming and code analysis.
 - [ ] Implement support for some non-UE based games:
 	- [ ] Area-51?
 	- [ ] RAGE?
-- [ ] implement another patching methods, i.e. JMP injection instead of CALL redirection, IAT patching etc.
+- [ ] implement other patching methods, i.e. JMP injection instead of CALL redirection, IAT patching etc.
 - [ ] maybe find other way of detecting the bug, maybe something like tracking a Direct3D device reinitialization or receiving a WM_ACTIVATE notification?
 
 Games based on more recent idTech engine versions also exhibit this bug, but Alt-Tabbing from the game and back seems to fix it easily.
@@ -65,6 +65,6 @@ _Примечание:_ Для Devastation, Pariah и Tribes: Vengeance этот
 	- [ ] Area-51?
 	- [ ] RAGE?
 - [ ] добавить поддержку других методов изменения кода, вроде вставки переходов JMP вместо перенаправления вызовов CALL, изменения IAT и др.
-- [ ] возможно найти другие методы обнаружения появления "лишнего" курсора: возможно, что-то типа детектирования реинициализации устройства Direct3D, или перехвата получения WM_ACTIVATE сообщений, или чего-то такого?
+- [ ] возможно, найти другие методы обнаружения появления "лишнего" курсора: возможно, что-то типа детектирования реинициализации устройства Direct3D, или перехвата получения WM_ACTIVATE сообщений, или чего-то такого.
 
 В играх на основе более свежих версий движка idTech баг тоже присутствует, но там обычно помогает переключиться куда-то с помощью Alt-Tab и обратно.
