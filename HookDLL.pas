@@ -12,6 +12,7 @@ var
      ClrCallAddr: Pointer = nil;
      MaxCallCount: Integer = 60;
      ReplFunc: procedure stdcall = h_StatsClear;
+     BytesCount: Integer = $40;
 
 implementation
 
@@ -204,7 +205,7 @@ procedure DoTheJob;
 var
      PEB: PMS_PEB;
      ImgBase, P_VP, P_OEP: PByte;
-     o_p, o_p2: DWORD;
+     o_p, o_p2, sz_VP{, sz_Diff}: DWORD;
      DosHdr: PImageDosHeader;
      WinHdr: PImageNtHeaders32;
      MinOfs, MaxOfs, FoundAddr: PByte;
@@ -219,63 +220,77 @@ begin
                    mov dword ptr [PEB], eax
                    pop eax
                end;
-          WriteToLog('PEB is at ' + PtrToHex(PEB));
-          WriteToLog('PEB Loader Data is at ' + PtrToHex(PEB.Ldr));
-          ImgBase := PEB.Reserved3[1];
-          WriteToLog('ImageBase = ' + PtrToHex(ImgBase));
-          DosHdr := PImageDosHeader(ImgBase);
-          if DosHdr.e_magic = $5A4D then
-          begin
-               WriteToLog('Found DOS MZ header');
-               WriteToLog('PE header offset: 0x' + IntToHex(DosHdr^._lfanew, 8));
-               WinHdr := PImageNtHeaders32(AddPtr(ImgBase, DosHdr^._lfanew));
-               if WinHdr^.Signature = $4550 then
+               WriteToLog('PEB is at ' + PtrToHex(PEB));
+               WriteToLog('PEB Loader Data is at ' + PtrToHex(PEB.Ldr));
+               ImgBase := PEB.Reserved3[1];
+               WriteToLog('ImageBase = ' + PtrToHex(ImgBase));
+               DosHdr := PImageDosHeader(ImgBase);
+               if DosHdr.e_magic = $5A4D then
                begin
-                    WriteToLog('Found Win32 PE header');
-                    WriteToLog('EP offset = 0x' + IntToHex(WinHdr^.OptionalHeader.AddressOfEntryPoint, 8));
-                    P_OEP := AddPtr(ImgBase, WinHdr^.OptionalHeader.AddressOfEntryPoint);
-                    WriteToLog('OEP = ' + PtrToHex(P_OEP));
-                    MinOfs := AddPtr(ImgBase, WinHdr.OptionalHeader.BaseOfCode);
-                    with WinHdr.OptionalHeader do
-                         MaxOfs := AddPtr(ImgBase, BaseOfCode + SizeOfCode);
-                    WriteToLog('MinOfs = ' + PtrToHex(MinOfs));
-                    WriteToLog('MaxOfs = ' + PtrToHex(MaxOfs));
-                    WriteToLog('Searching for code sequence...');
-                    if FindSequence(MinOfs, WinHdr.OptionalHeader.SizeOfCode, FoundAddr) then
+                    WriteToLog('Found DOS MZ header');
+                    WriteToLog('PE header offset: 0x' + IntToHex(DosHdr^._lfanew, 8));
+                    WinHdr := PImageNtHeaders32(AddPtr(ImgBase, DosHdr^._lfanew));
+                    if WinHdr^.Signature = $4550 then
                     begin
-                         WriteToLog('FOUND at: ' + PtrToHex(FoundAddr));
-                         CallAddr := PPointer(AddPtr(FoundAddr, CodeOffset));
-                         WriteToLog('Call address = ' + PtrToHex(CallAddr^));
-                         WriteToLog('Writing call address to ' + PtrToHex(Addr(ClrCallAddr)));
-                         ClrCallAddr := CallAddr^;
-                         WriteToLog('Preparing to patch...');
-                         P_VP := PByte(UInt32(FoundAddr) and (not UInt32($FFF)));
-                         WriteToLog('Trying to unVP: ' + PtrToHex(P_VP));
-                         if VirtualProtect(P_VP, $2000, PAGE_EXECUTE_READWRITE, o_p) then
-                              WriteToLog('Success')
+                         WriteToLog('Found Win32 PE header');
+                         WriteToLog('EP offset = 0x' + IntToHex(WinHdr^.OptionalHeader.AddressOfEntryPoint, 8));
+                         P_OEP := AddPtr(ImgBase, WinHdr^.OptionalHeader.AddressOfEntryPoint);
+                         WriteToLog('OEP = ' + PtrToHex(P_OEP));
+                         MinOfs := AddPtr(ImgBase, WinHdr.OptionalHeader.BaseOfCode);
+                         with WinHdr.OptionalHeader do
+                              MaxOfs := AddPtr(ImgBase, BaseOfCode + SizeOfCode);
+                         WriteToLog('MinOfs = ' + PtrToHex(MinOfs));
+                         WriteToLog('MaxOfs = ' + PtrToHex(MaxOfs));
+                         WriteToLog('Searching for code sequence...');
+                         if FindSequence(MinOfs, WinHdr.OptionalHeader.SizeOfCode, FoundAddr) then
+                         begin
+                              WriteToLog('FOUND at: ' + PtrToHex(FoundAddr));
+                              CallAddr := PPointer(AddPtr(FoundAddr, CodeOffset));
+                              WriteToLog('Call address = ' + PtrToHex(CallAddr^));
+                              WriteToLog('Writing call address to ' + PtrToHex(Addr(ClrCallAddr)));
+                              ClrCallAddr := CallAddr^;
+                              WriteToLog('Preparing to patch...');
+                              P_VP := AddPtr(ImgBase, WinHdr.OptionalHeader.BaseOfCode);
+                              //P_VP := PByte(UInt32(FoundAddr) and (not UInt32($FFF)));
+                              sz_VP := WinHdr.OptionalHeader.SizeOfCode;
+                              //sz_VP := $2000;
+     {
+                              sz_Diff := DWORD(MaxOfs) - DWORD(P_VP);
+                              if sz_Diff < sz_VP then
+                              begin
+                                   sz_VP := sz_Diff and (not UInt32($FF));
+                                   WriteToLog('VP size 0x2000 too large, setting to 0x' +
+                                        IntToHex(sz_VP, 4));
+                              end;
+     }
+                              WriteToLog('Trying to unVP: ' + PtrToHex(P_VP));
+                              if VirtualProtect(P_VP, sz_VP, PAGE_EXECUTE_READWRITE, o_p) then
+                                   WriteToLog('Success')
+                              else
+                                   WriteToLog('FAILED');
+
+                              WriteToLog('Writing hook call address to ' + PtrToHex(Addr(NewCallAddr)));
+                              NewCallAddr := Addr(ReplFunc);
+                              WriteToLog('Hook call address = ' + PtrToHex(NewCallAddr));
+                              DumpBytes('Bytes at code site: ', FoundAddr, BytesCount);
+                              WriteToLog('Patching...');
+                              CallAddr^ := Addr(NewCallAddr);
+                              DumpBytes('Bytes after patch:  ', FoundAddr, BytesCount);
+                              WriteToLog('Trying to reVP...');
+                              if VirtualProtect(P_VP, sz_VP, o_p, o_p2) then
+                                   WriteToLog('Success')
+                              else
+                                   WriteToLog('FAILED');
+
+                         end
                          else
-                              WriteToLog('FAILED');
-                         WriteToLog('Writing hook call address to ' + PtrToHex(Addr(NewCallAddr)));
-                         NewCallAddr := Addr(ReplFunc);
-                         WriteToLog('Hook call address = ' + PtrToHex(NewCallAddr));
-                         DumpBytes('Bytes at code site: ', FoundAddr, $30);
-                         WriteToLog('Patching...');
-                         CallAddr^ := Addr(NewCallAddr);
-                         DumpBytes('Bytes after patch:  ', FoundAddr, $30);
-                         WriteToLog('Trying to reVP...');
-                         if VirtualProtect(P_VP, $2000, o_p, o_p2) then
-                              WriteToLog('Success')
-                         else
-                              WriteToLog('FAILED');
+                              WriteToLog('NOT FOUND.');
                     end
-                    else
-                         WriteToLog('NOT FOUND.');
+                         else
+                              raise Exception.Create('Win32 PE header not found!');
                end
                     else
-                         raise Exception.Create('Win32 PE header not found!');
-          end
-               else
-                    raise Exception.Create('DOS MZ header not found!');
+                         raise Exception.Create('DOS MZ header not found!');
           except
                on E: Exception do
                begin
