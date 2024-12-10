@@ -14,6 +14,10 @@ var
      ReplFunc: procedure stdcall = h_StatsClear;
      BytesCount: Integer = $40;
 
+function GetSysDir: string;
+procedure WriteToLog(const Msg: AnsiString);
+procedure DumpBytes(const Prefix: AnsiString = ''; p: PByte = nil; Count: Integer = 0);
+
 implementation
 
 uses
@@ -90,6 +94,15 @@ end;
 function PtrToHex(const P: Pointer): AnsiString; inline;
 begin
      Result := '0x' + IntToHex(UInt32(P), 8);
+end;
+
+function GetSysDir: string;
+var
+     Buffer: array[0..MAX_PATH] of Char;
+begin
+     GetSystemDirectory(Buffer, MAX_PATH - 1);
+     SetLength(Result, StrLen(Buffer));
+     Result := Buffer;
 end;
 
 procedure WriteToLog(const Msg: AnsiString);
