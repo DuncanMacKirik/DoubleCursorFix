@@ -1,0 +1,11 @@
+render::BeginNormalRender
+obj_mgr::Render3dObjects
+camera::RenderView
+GameApp :::
+	RenderGame
+	UpdateFrontEnd
+		RunFrontEnd
+		RunGame
+			AppMain
+
+d3dengine::eng_pageflip
