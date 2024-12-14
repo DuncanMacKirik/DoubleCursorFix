@@ -2,12 +2,12 @@ library DevHookDLL;
 
 uses
      HookDLL in '..\HookDLL.pas',
-     Winapi.DirectDraw;
+     HookDDraw in '..\HookDDraw.pas';
 
 {$R *.res}
 
 exports
-     DirectDrawCreate;
+     h_DirectDrawCreate name 'DirectDrawCreate';
 
 begin
      Sequence := [$53, $56, $8B, $F1, $8B, $08, $33, $DB,
