@@ -7,9 +7,14 @@ This family of patches mitigates the problem in a quick-and-dirty way (which is 
 3) patch it so that once every 60 game loop cycles the OS cursor status is checked, and the cursor is hidden if it is visible.
 
 ### Supported games:
+* Area-51
+* Deus Ex
 * Devastation
 * Pariah
+* Project IGI
+* Project IGI 2: Covert Strike
 * Shadow Ops: Red Mercury
+* Tom Clancy's Splinter Cell
 * Tribes: Vengeance
 
 When I find this bug in other games I play, I will (hopefully) add support for them too.
@@ -43,9 +48,14 @@ Games based on more recent idTech engine versions also exhibit this bug, but Alt
 3) он модифицируется таким образом: каждые 60 циклов производится проверка на видимость курсора мыши ОС, и если он является видимым - он прячется.
 
 ### Поддерживаемые игры:
+* Area-51
+* Deus Ex
 * Devastation
 * Pariah
+* Project IGI
+* Project IGI 2: Covert Strike
 * Shadow Ops: Red Mercury
+* Tom Clancy's Splinter Cell
 * Tribes: Vengeance
 
 Если я найду этот баг в других играх, в которые буду играть, наверное буду добавлять их поддержку тоже, постепенно.
