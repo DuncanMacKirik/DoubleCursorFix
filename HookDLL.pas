@@ -12,7 +12,7 @@ var
      ClrCallAddr: Pointer = nil;
      MaxCallCount: Integer = 60;
      ReplFunc: procedure stdcall = h_StatsClear;
-     BytesCount: Integer = $40;
+     BytesCount: Integer = $30;
 
 function GetSysDir: string;
 procedure WriteToLog(const Msg: AnsiString);

@@ -7,6 +7,8 @@ uses
      System.SysUtils,
      Winapi.DirectDraw;
 
+function h_DirectDrawCreate(lpGUID: PGUID; out lplpDD: IDirectDraw;
+    pUnkOuter: IUnknown): HResult; stdcall;
 function h_DirectDrawCreateEx(lpGUID: PGUID; out lplpDD: IDirectDraw7;
     const iid: TGUID; pUnkOuter: IUnknown): HResult; stdcall;
 function h_DirectDrawEnumerateExA(lpCallback: TDDEnumCallbackExA; lpContext: Pointer;
@@ -21,6 +23,8 @@ const
 
 var
      realDLL: HMODULE = 0;
+     r_DirectDrawCreate: function (lpGUID: PGUID; out lplpDD: IDirectDraw;
+          pUnkOuter: IUnknown): HResult; stdcall;
      r_DirectDrawCreateEx: function (lpGUID: PGUID; out lplpDD: IDirectDraw7;
           const iid: TGUID; pUnkOuter: IUnknown): HResult; stdcall;
      r_DirectDrawEnumerateExA: function (lpCallback: TDDEnumCallbackExA;
@@ -48,6 +52,17 @@ begin
           WriteToLog('Loading real ' + HookFuncName + ' function done!')
      else
           WriteToLog('*** Loading real ' + HookFuncName + ' function FAILED !!! ***');
+end;
+
+function h_DirectDrawCreate(lpGUID: PGUID; out lplpDD: IDirectDraw;
+    pUnkOuter: IUnknown): HResult; stdcall;
+const
+     HookFuncName = 'DirectDrawCreate';
+begin
+     WriteToLog(HookFuncName + ' called');
+     r_DirectDrawCreate := CheckAndLoadRealFunc(HookFuncName);
+     WriteToLog('Transferring control to the real ' + HookFuncName + ' function...');
+     Result := r_DirectDrawCreate(lpGUID, lplpDD, pUnkOuter);
 end;
 
 function h_DirectDrawCreateEx(lpGUID: PGUID; out lplpDD: IDirectDraw7;
