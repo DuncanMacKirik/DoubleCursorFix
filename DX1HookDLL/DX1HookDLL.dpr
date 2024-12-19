@@ -12,7 +12,7 @@ asm
      call CheckAndFixCursor
      popad
      pop esi
-     mov eax, [ClrCallAddr]
+     mov eax, [OldCallAddr]
      call dword ptr [eax]
      push esi
 end;

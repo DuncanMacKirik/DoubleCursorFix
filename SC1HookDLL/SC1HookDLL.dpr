@@ -14,7 +14,7 @@ asm
      pop ebx
      pop eax
      push eax
-     mov eax, [ClrCallAddr]
+     mov eax, [OldCallAddr]
      call dword ptr [eax]
      push ebx
 end;
