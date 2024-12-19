@@ -1,5 +1,6 @@
 unit HookDLL;
 
+
 interface
 
 procedure InitDLL;
@@ -9,14 +10,22 @@ procedure CheckAndFixCursor; stdcall;
 var
      Sequence: array of Byte;
      CodeOffset: Int32;
-     ClrCallAddr: Pointer = nil;
+     OldCallAddr: Pointer = nil;
      MaxCallCount: Integer = 60;
      ReplFunc: procedure stdcall = h_StatsClear;
      BytesCount: Integer = $30;
+     DumpOffset: Integer = 0;
+     CallIsRelative: Boolean = False;
+     CallInstrSize: Integer = 5;
+     WriteNewBytes: Boolean = False;
+     NewBytes: array of Byte;
+     NewBytesOffset: Int32;
+     DirectCall: Boolean = False;
 
 function GetSysDir: string;
 procedure WriteToLog(const Msg: AnsiString);
 procedure DumpBytes(const Prefix: AnsiString = ''; p: PByte = nil; Count: Integer = 0);
+
 
 implementation
 
@@ -86,9 +95,9 @@ type
   end;
 
 
-function AddPtr(const Base: PByte; Offset: UInt32): PByte; inline;
+function AddPtr(const Base: PByte; Offset: Int32): PByte; inline;
 begin
-     Result := PByte(UInt32(Base) + Offset);
+     Result := PByte(Int32(Base) + Offset);
 end;
 
 function PtrToHex(const P: Pointer): AnsiString; inline;
@@ -141,6 +150,8 @@ var
      i: Integer;
 begin
      S := '';
+     if DumpOffset <> 0 then
+          p := PByte(Int32(p) + DumpOffset);
      for i := 1 to Count do
      begin
           S := S + IntToHex(p^, 2);
@@ -210,7 +221,7 @@ asm
      pushad
      call CheckAndFixCursor
      popad
-     mov eax, [ClrCallAddr]
+     mov eax, [OldCallAddr]
      call dword ptr [eax]
 end;
 
@@ -218,10 +229,10 @@ procedure DoTheJob;
 var
      PEB: PMS_PEB;
      ImgBase, P_VP, P_OEP: PByte;
-     o_p, o_p2, sz_VP{, sz_Diff}: DWORD;
+     o_p, o_p2, sz_VP: DWORD;
      DosHdr: PImageDosHeader;
      WinHdr: PImageNtHeaders32;
-     MinOfs, MaxOfs, FoundAddr: PByte;
+     MinOfs, MaxOfs, FoundAddr, WriteAddr: PByte;
      CallAddr: PPointer;
 begin
      try
@@ -259,42 +270,48 @@ begin
                          begin
                               WriteToLog('FOUND at: ' + PtrToHex(FoundAddr));
                               CallAddr := PPointer(AddPtr(FoundAddr, CodeOffset));
-                              WriteToLog('Call address = ' + PtrToHex(CallAddr^));
-                              WriteToLog('Writing call address to ' + PtrToHex(Addr(ClrCallAddr)));
-                              ClrCallAddr := CallAddr^;
+                              if CallIsRelative then
+                              begin
+                                   WriteToLog('Call address ' + PtrToHex(CallAddr^) + ' is relative, converting to real:');
+                                   OldCallAddr := Pointer(Int32(CallAddr^) - Int32(CallAddr) + CallInstrSize);
+                                   WriteToLog(PtrToHex(CallAddr^) + ' - ' + PtrToHex(CallAddr) + ' + ' + CallInstrSize.ToString + ' = ' +
+                                        PtrToHex(OldCallAddr)
+                                   );
+                              end
+                              else
+                              begin
+                                   WriteToLog('Saving call address: ' + PtrToHex(CallAddr^) + ' => [' + PtrToHex(Addr(OldCallAddr)) + ']');
+                                   OldCallAddr := CallAddr^;
+                              end;
                               WriteToLog('Preparing to patch...');
                               P_VP := AddPtr(ImgBase, WinHdr.OptionalHeader.BaseOfCode);
-                              //P_VP := PByte(UInt32(FoundAddr) and (not UInt32($FFF)));
                               sz_VP := WinHdr.OptionalHeader.SizeOfCode;
-                              //sz_VP := $2000;
-     {
-                              sz_Diff := DWORD(MaxOfs) - DWORD(P_VP);
-                              if sz_Diff < sz_VP then
-                              begin
-                                   sz_VP := sz_Diff and (not UInt32($FF));
-                                   WriteToLog('VP size 0x2000 too large, setting to 0x' +
-                                        IntToHex(sz_VP, 4));
-                              end;
-     }
                               WriteToLog('Trying to unVP: ' + PtrToHex(P_VP));
                               if VirtualProtect(P_VP, sz_VP, PAGE_EXECUTE_READWRITE, o_p) then
                                    WriteToLog('Success')
                               else
                                    WriteToLog('FAILED');
-
-                              WriteToLog('Writing hook call address to ' + PtrToHex(Addr(NewCallAddr)));
                               NewCallAddr := Addr(ReplFunc);
-                              WriteToLog('Hook call address = ' + PtrToHex(NewCallAddr));
+                              WriteToLog('Writing hook call address: ' + PtrToHex(NewCallAddr) +
+                                   ' => ' + PtrToHex(Addr(NewCallAddr)));
                               DumpBytes('Bytes at code site: ', FoundAddr, BytesCount);
+                              if WriteNewBytes then
+                              begin
+                                   WriteAddr := AddPtr(FoundAddr, NewBytesOffset);
+                                   WriteToLog('Writing new bytes to ' + PtrToHex(WriteAddr));
+                                   Move(NewBytes[0], WriteAddr^, Length(NewBytes));
+                              end;
                               WriteToLog('Patching...');
-                              CallAddr^ := Addr(NewCallAddr);
+                              if DirectCall then
+                                   CallAddr^ := NewCallAddr
+                              else
+                                   CallAddr^ := Addr(NewCallAddr);
                               DumpBytes('Bytes after patch:  ', FoundAddr, BytesCount);
                               WriteToLog('Trying to reVP...');
                               if VirtualProtect(P_VP, sz_VP, o_p, o_p2) then
                                    WriteToLog('Success')
                               else
                                    WriteToLog('FAILED');
-
                          end
                          else
                               WriteToLog('NOT FOUND.');
@@ -313,7 +330,7 @@ begin
                end;
           end;
      finally
-          JobDone := true;
+          JobDone := True;
      end;
 end;
 
