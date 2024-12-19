@@ -10,6 +10,7 @@ This family of patches mitigates the problem in a quick-and-dirty way (which is 
 * Area-51
 * Deus Ex
 * Devastation
+* Kill.switch
 * Pariah
 * Project IGI
 * Project IGI 2: Covert Strike
@@ -51,6 +52,7 @@ Games based on more recent idTech engine versions also exhibit this bug, but Alt
 * Area-51
 * Deus Ex
 * Devastation
+* Kill.switch
 * Pariah
 * Project IGI
 * Project IGI 2: Covert Strike
