@@ -21,6 +21,7 @@ var
      NewBytes: array of Byte;
      NewBytesOffset: Int32;
      DirectCall: Boolean = False;
+     DoNotReVP: Boolean = False;
 
 function GetSysDir: string;
 procedure WriteToLog(const Msg: AnsiString);
@@ -307,11 +308,16 @@ begin
                               else
                                    CallAddr^ := Addr(NewCallAddr);
                               DumpBytes('Bytes after patch:  ', FoundAddr, BytesCount);
-                              WriteToLog('Trying to reVP...');
-                              if VirtualProtect(P_VP, sz_VP, o_p, o_p2) then
-                                   WriteToLog('Success')
+                              if DoNotReVP then
+                                   WriteToLog('ReVP is not needed.')
                               else
-                                   WriteToLog('FAILED');
+                              begin
+                                   WriteToLog('Trying to reVP...');
+                                   if VirtualProtect(P_VP, sz_VP, o_p, o_p2) then
+                                        WriteToLog('Success')
+                                   else
+                                        WriteToLog('FAILED');
+                              end;
                          end
                          else
                               WriteToLog('NOT FOUND.');
