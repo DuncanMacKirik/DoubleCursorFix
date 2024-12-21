@@ -15,6 +15,7 @@ This family of patches mitigates the problem in a quick-and-dirty way (which is 
 * Project IGI
 * Project IGI 2: Covert Strike
 * Shadow Ops: Red Mercury
+* The Regiment
 * Tom Clancy's Splinter Cell
 * Tribes: Vengeance
 
@@ -57,6 +58,7 @@ Games based on more recent idTech engine versions also exhibit this bug, but Alt
 * Project IGI
 * Project IGI 2: Covert Strike
 * Shadow Ops: Red Mercury
+* The Regiment
 * Tom Clancy's Splinter Cell
 * Tribes: Vengeance
 
